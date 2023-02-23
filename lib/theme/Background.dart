@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:video_player/video_player.dart';
 
+import 'package:video_player/video_player.dart';
 
 class BackgroundVideo extends StatefulWidget {
   @override
@@ -26,7 +26,26 @@ class _BackgroundVideoState extends State<BackgroundVideo> {
       });
   }
 
-  
+  VideoPlayerController getController() {
+    return _controller;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox.expand(
+                child: FittedBox(
+                  // If your background video doesn't look right, try changing the BoxFit property.
+                  // BoxFit.fill created the look I was going for.
+                  fit: BoxFit.fill,
+                  child: SizedBox(
+                    width: this.getController().value.size?.width ?? 0,
+                    height: this.getController().value.size?.height ?? 0,
+                    child: VideoPlayer(this.getController()),
+                  ),
+                ),
+              );
+  }
+
   // TODO 8: Override the dipose() method to cleanup the video controller.
   @override
   void dispose() {
