@@ -1,13 +1,91 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'theme/AppTheme.dart';
 import 'theme/AppStateNotifier.dart';
-import 'package:video_player/video_player.dart';
-import 'theme/Background.dart';
 import 'components/RSSYle.dart';
-//import 'components/NRJConsumptionOulu.dart';
+import 'components/NRJConsumptionOulu.dart';
+import 'theme/Background.dart';
+import 'components/Login.dart';
+import 'components/Profile.dart';
+import 'components/Menu.dart';
+import 'components/Drawer.dart';
+import 'dart:async';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
-void main() {
+Future<void> initNotifications() async {
+  FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
+      FlutterLocalNotificationsPlugin();
+
+  const AndroidInitializationSettings initializationSettingsAndroid =
+      AndroidInitializationSettings('app_icon');
+
+  final IOSInitializationSettings initializationSettingsIOS =
+      IOSInitializationSettings();
+
+  final InitializationSettings initializationSettings =
+      InitializationSettings(
+    android: initializationSettingsAndroid,
+    iOS: initializationSettingsIOS,
+  );
+
+  await flutterLocalNotificationsPlugin.initialize(
+    initializationSettings,
+    onSelectNotification: (String? payload) async {
+      // Handle notification tapped
+    },
+  );
+}
+
+class NotificationService {
+  static const _notificationTitle = 'Notification Title';
+  static const _notificationText = 'Notification Text';
+
+  final _flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
+  late final _androidSettings;
+  late final _iosSettings;
+  late final _platformSettings;
+
+  Future<void> initialize() async {
+    _androidSettings = AndroidInitializationSettings('app_icon');
+    _iosSettings = IOSInitializationSettings();
+    _platformSettings = InitializationSettings(
+      android: _androidSettings,
+      iOS: _iosSettings,
+    );
+
+    await _flutterLocalNotificationsPlugin.initialize(
+      _platformSettings,
+      onSelectNotification: (String? payload) async {
+        // Handle notification tapped
+      },
+    );
+    scheduleNotifications();
+    
+  }
+  void scheduleNotifications() {
+    const notificationDetails = NotificationDetails(
+      android: AndroidNotificationDetails(
+        'channel_id',
+        'channel_name',
+        'channel_description',
+      ),
+      iOS: IOSNotificationDetails(),
+    );
+
+    Timer.periodic(Duration(minutes: 2), (timer) async {
+      await _flutterLocalNotificationsPlugin.show(
+        0,
+        _notificationTitle,
+        _notificationText,
+        notificationDetails,
+      );
+    });
+  }
+}
+
+
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await initNotifications();
   runApp(
     ChangeNotifierProvider<AppStateNotifier>(
         create: (_) => AppStateNotifier(), child: MyApp()),
@@ -15,165 +93,65 @@ void main() {
 }
 
 class MyApp extends StatelessWidget {
+  final NotificationService _notificationService = NotificationService();
   @override
   Widget build(BuildContext context) {
     return Consumer<AppStateNotifier>(builder: (context, appState, child) {
       return MaterialApp(
         title: 'MyApp',
-        theme: ThemeData.light(),
+        theme: ThemeData(
+          primaryColor: Colors.green,
+        ),
         darkTheme: ThemeData.dark(),
         themeMode: appState.isDarkMode ? ThemeMode.dark : ThemeMode.light,
         initialRoute: '/',
         routes: {
-          //'/': (context) => RSSYle(),
-          // '/': (context) =>BackgroundVideo(),
           '/': (context) => HomeScreen(),
-          '/news': (context) => RSSYle(),
+          '/news': (context) => NewsScreen(),
           '/profile': (context) => ProfileScreen(),
+          '/figuers': (context) => ChartsScreen(),
         },
         debugShowCheckedModeBanner: false,
       );
     });
   }
+
+  @override
+  void initState() {
+    _notificationService.initialize();
+  }
 }
+ 
 
 class HomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text('Home'),
-        leading: Builder(
-          builder: (BuildContext context) {
-            return IconButton(
-              icon: const Icon(Icons.menu),
-              onPressed: () {
-                Scaffold.of(context).openDrawer();
-              },
-            );
-          },
-        ),
-      ),
-      drawer: Drawer(
-        child: ListView(
-          padding: EdgeInsets.zero,
+        appBar: Menu(),
+        drawer: MenuDrawer(),
+        body: Stack(
           children: <Widget>[
-            DrawerHeader(
-              decoration: BoxDecoration(
-                color: Theme.of(context).primaryColor,
-              ),
-              child: Text(
-                'Menu',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 24,
+            BackgroundVideo(),
+            Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: <Widget>[
+                SizedBox(
+                  height: 50.0,
                 ),
-              ),
-            ),
-            ListTile(
-              leading: Icon(Icons.person),
-              title: Text('Profile'),
-              onTap: () {
-                Navigator.pushNamed(context, '/profile');
-              },
-            ),
-            ListTile(
-              leading: Icon(Icons.newspaper),
-              title: Text('News Feed'),
-              onTap: () {
-                Navigator.pushNamed(context, '/news');
-              },
-            ),
-            ListTile(
-              leading: Icon(Icons.lightbulb_outline),
-              title: Text('Switch Mode'),
-              onTap: () {
-                Provider.of<AppStateNotifier>(context, listen: false)
-                    .toggleTheme();
-              },
-            ),
+                Login()
+              ],
+            )
           ],
-        ),
-      ),
-      body: Stack(
-        children: <Widget>[
-          BackgroundVideo(),
-          Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-      children: <Widget>[
-        Container(
-          child: Center(
-            child: Image(
-              image: AssetImage("assets/coffee_logo.png"),
-              width: 200.0,
-            ),
-          ),
-        ),
-        SizedBox(
-          height: 50.0,
-        ),
-        Container(
-          decoration: new BoxDecoration(
-            color: Colors.white.withAlpha(200),
-            borderRadius: new BorderRadius.only(
-              topLeft: const Radius.circular(10.0),
-              topRight: const Radius.circular(10.0),
-              bottomLeft: const Radius.circular(10.0),
-              bottomRight: const Radius.circular(10.0),
-            ),
-          ),
-          padding: EdgeInsets.all(16),
-          width: 300,
-          height: 200,
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: <Widget>[
-              TextField(
-                cursorColor: Color(0xffb55e28),
-                decoration: InputDecoration(
-                  hintText: 'Username',
-                ),
-              ),
-              TextField(
-                cursorColor: Color(0xffb55e28),
-                decoration: InputDecoration(
-                  hintText: 'Password',
-                ),
-              ),
-              ButtonTheme(
-                minWidth: 300.0,
-                child: ElevatedButton(
-                  child: Text(
-                    'Login',
-                    style: TextStyle(color: Color(0xffffd544), fontSize: 20),
-                  ),
-                  onPressed: () {},
-                ),
-              ),
-            ],
-          ),
-        ),
-      
-      Text(
-                'Welcome to MyApp!',
-                style: Theme.of(context).textTheme.headline4,
-              ),
-              ElevatedButton(
-                onPressed: () {
-                  Navigator.pushNamed(context, '/profile');
-                },
-                child: Text('Login'),
-              ),],
-          )
-        ],
-      ),
-    );
+        ));
   }
 }
 
 class ProfileScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+    bool isLoggedIn = LoginData().hasLogin();
+    String user = LoginData().getUsername();
+
     return Scaffold(
       appBar: AppBar(
         title: Text('Profile'),
@@ -196,22 +174,103 @@ class ProfileScreen extends StatelessWidget {
         ],
       ),
       body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(
-              'Profile Screen',
-              style: Theme.of(context).textTheme.headline4,
-            ),
-            ElevatedButton(
-              onPressed: () {
-                Navigator.pop(context);
-              },
-              child: Text('Go Back'),
-            ),
-          ],
-        ),
+        child: isLoggedIn
+            ? Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    'Welcome Back Green $user',
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                  UserAddess(),
+                  ElevatedButton(
+                    onPressed: () {
+                      LoginData().doLogout();
+                      Navigator.pushNamedAndRemoveUntil(
+                          context, '/', (route) => true);
+                    },
+                    child: Text('Log Out'),
+                  ),
+                ],
+              )
+            : Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    'Please log in to continue. Press "Go back" to return to the login screen.',
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                  ElevatedButton(
+                    onPressed: () {
+                      Navigator.pop(context);
+                    },
+                    child: Text('Go Back'),
+                  ),
+                ],
+              ),
       ),
     );
   }
 }
+
+class ChartsScreen extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Oulu Energy consumption'),
+        actions: [
+          PopupMenuButton<String>(
+            onSelected: (value) {
+              if (value == 'settings') {
+                Navigator.pushNamed(context, '/news');
+              }
+            },
+            itemBuilder: (BuildContext context) {
+              return [
+                PopupMenuItem(
+                  value: 'news',
+                  child: Text('news'),
+                ),
+              ];
+            },
+          ),
+        ],
+      ),
+      body: Stack(children: <Widget>[
+        ChartScreen(),
+      ]),
+    );
+  }
+}
+
+class NewsScreen extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Yle News'),
+        actions: [
+          PopupMenuButton<String>(
+            onSelected: (value) {
+              if (value == 'settings') {
+                Navigator.pushNamed(context, '/news');
+              }
+            },
+            itemBuilder: (BuildContext context) {
+              return [
+                PopupMenuItem(
+                  value: 'news',
+                  child: Text('news'),
+                ),
+              ];
+            },
+          ),
+        ],
+      ),
+      body: RSSYle(),
+    );
+  }
+}
+
+
