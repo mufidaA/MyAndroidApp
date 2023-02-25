@@ -11,18 +11,18 @@ import 'components/Drawer.dart';
 import 'dart:async';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
+
 Future<void> initNotifications() async {
   FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
       FlutterLocalNotificationsPlugin();
 
   const AndroidInitializationSettings initializationSettingsAndroid =
-      AndroidInitializationSettings('app_icon');
+      AndroidInitializationSettings('meh_icon');
 
   final IOSInitializationSettings initializationSettingsIOS =
       IOSInitializationSettings();
 
-  final InitializationSettings initializationSettings =
-      InitializationSettings(
+  final InitializationSettings initializationSettings = InitializationSettings(
     android: initializationSettingsAndroid,
     iOS: initializationSettingsIOS,
   );
@@ -36,7 +36,7 @@ Future<void> initNotifications() async {
 }
 
 class NotificationService {
-  static const _notificationTitle = 'Notification Title';
+  static const _notificationTitle = 'Presentation - timed notification';
   static const _notificationText = 'Notification Text';
 
   final _flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
@@ -45,13 +45,12 @@ class NotificationService {
   late final _platformSettings;
 
   Future<void> initialize() async {
-    _androidSettings = AndroidInitializationSettings('app_icon');
+    _androidSettings = AndroidInitializationSettings('meh_icon');
     _iosSettings = IOSInitializationSettings();
     _platformSettings = InitializationSettings(
       android: _androidSettings,
       iOS: _iosSettings,
     );
-
     await _flutterLocalNotificationsPlugin.initialize(
       _platformSettings,
       onSelectNotification: (String? payload) async {
@@ -59,33 +58,33 @@ class NotificationService {
       },
     );
     scheduleNotifications();
-    
   }
+
   void scheduleNotifications() {
     const notificationDetails = NotificationDetails(
-      android: AndroidNotificationDetails(
-        'channel_id',
-        'channel_name',
-        'channel_description',
-      ),
+      android: AndroidNotificationDetails('channel_id', 'channel_name'),
       iOS: IOSNotificationDetails(),
     );
-
-    Timer.periodic(Duration(minutes: 2), (timer) async {
+    int x = 20222;
+    int minsPassed = 0;
+    Timer.periodic(Duration(seconds: 60), (timer) async {
+      minsPassed++;
       await _flutterLocalNotificationsPlugin.show(
-        0,
+        x++,
         _notificationTitle,
-        _notificationText,
+        "$minsPassed minutes elapsed",
         notificationDetails,
       );
+      debugPrint('timer triggered $x');
     });
   }
 }
 
-
 Future<void> main() async {
+  debugPrint('in main');
   WidgetsFlutterBinding.ensureInitialized();
   await initNotifications();
+
   runApp(
     ChangeNotifierProvider<AppStateNotifier>(
         create: (_) => AppStateNotifier(), child: MyApp()),
@@ -116,12 +115,15 @@ class MyApp extends StatelessWidget {
     });
   }
 
-  @override
+  MyApp() {
+    initState();
+  }
+
   void initState() {
+    debugPrint('initState');
     _notificationService.initialize();
   }
 }
- 
 
 class HomeScreen extends StatelessWidget {
   @override
@@ -179,7 +181,7 @@ class ProfileScreen extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Text(
-                    'Welcome Back Green $user',
+                    'Welcome Back $user',
                     style: Theme.of(context).textTheme.titleMedium,
                   ),
                   UserAddess(),
@@ -272,5 +274,3 @@ class NewsScreen extends StatelessWidget {
     );
   }
 }
-
-

@@ -4,16 +4,6 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 
 
-/*class Chart extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Syncfusion Flutter Chart',
-      home: ChartScreen(),
-    );
-  }
-}**/
-
 class ChartScreen extends StatefulWidget {
   @override
   _ChartScreenState createState() => _ChartScreenState();
